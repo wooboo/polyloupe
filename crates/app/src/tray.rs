@@ -58,10 +58,16 @@ pub fn init(cx: &mut App) {
         menu_tx.try_send(command).ok();
     }));
 
-    let tray = TrayIconBuilder::new()
+    let builder = TrayIconBuilder::new()
         .with_menu(Box::new(menu))
-        .with_tooltip("Polyloupe — lupa tłumacząca")
-        .with_icon_templated(loupe_icon(64))
+        .with_tooltip("Polyloupe — lupa tłumacząca");
+    // macOS tints template icons to match the menu bar; elsewhere the icon
+    // needs its own background to stay visible on light and dark taskbars.
+    #[cfg(target_os = "macos")]
+    let builder = builder.with_icon_templated(loupe_icon(64, false));
+    #[cfg(not(target_os = "macos"))]
+    let builder = builder.with_icon(loupe_icon(64, true));
+    let tray = builder
         .build()
         .inspect_err(|err| log::error!("creating the tray icon: {err}"))
         .ok();
@@ -95,11 +101,12 @@ pub fn init(cx: &mut App) {
     .detach();
 }
 
-/// A magnifying glass drawn in black on transparent, for use as a template icon.
-fn loupe_icon(size: u32) -> Icon {
+/// A magnifying glass: black on transparent (a template icon), or white on the
+/// app's orange rounded square when `filled`.
+fn loupe_icon(size: u32, filled: bool) -> Icon {
     let s = size as f32;
     let (cx, cy, radius, ring) = (0.42 * s, 0.42 * s, 0.27 * s, 0.09 * s);
-    let handle = (0.62 * s, 0.62 * s, 0.9 * s, 0.9 * s, 0.075 * s);
+    let handle = (0.62 * s, 0.62 * s, 0.84 * s, 0.84 * s, 0.075 * s);
     let mut rgba = vec![0u8; (size * size * 4) as usize];
     for y in 0..size {
         for x in 0..size {
@@ -107,11 +114,33 @@ fn loupe_icon(size: u32) -> Icon {
             let ring_distance = ((px - cx).hypot(py - cy) - radius).abs() - ring / 2.0;
             let handle_distance =
                 segment_distance(px, py, handle.0, handle.1, handle.2, handle.3) - handle.4;
-            let alpha = (0.5 - ring_distance.min(handle_distance)).clamp(0.0, 1.0);
-            rgba[((y * size + x) * 4 + 3) as usize] = (alpha * 255.0) as u8;
+            let glyph = (0.5 - ring_distance.min(handle_distance)).clamp(0.0, 1.0);
+            let pixel = &mut rgba[((y * size + x) * 4) as usize..][..4];
+            if filled {
+                let background =
+                    (0.5 - rounded_square_distance(px, py, s, 0.22 * s)).clamp(0.0, 1.0);
+                let mix = |orange: f32| (orange + (255.0 - orange) * glyph) as u8;
+                pixel.copy_from_slice(&[
+                    mix(194.0),
+                    mix(65.0),
+                    mix(12.0),
+                    (background * 255.0) as u8,
+                ]);
+            } else {
+                pixel[3] = (glyph * 255.0) as u8;
+            }
         }
     }
     Icon::from_rgba(rgba, size, size).expect("valid icon")
+}
+
+/// Signed distance to a square of side `size` with corner `radius` (negative inside).
+#[cfg_attr(target_os = "macos", allow(dead_code))]
+fn rounded_square_distance(px: f32, py: f32, size: f32, radius: f32) -> f32 {
+    let half = size / 2.0;
+    let qx = (px - half).abs() - (half - radius);
+    let qy = (py - half).abs() - (half - radius);
+    qx.max(0.0).hypot(qy.max(0.0)) + qx.max(qy).min(0.0) - radius
 }
 
 fn segment_distance(px: f32, py: f32, ax: f32, ay: f32, bx: f32, by: f32) -> f32 {
