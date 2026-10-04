@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Polyloupe — a magnifying glass that translates your screen</title>
+  <meta name="description" content="Hold a magnifying glass over any text on your screen and read it in your own language, right where it was. Offline, free and open source. Made for older people.">
+  <meta property="og:title" content="Polyloupe — a magnifying glass that translates your screen">
+  <meta property="og:description" content="Offline, free and open source. Made for older people.">
+  <meta property="og:image" content="https://wooboo.github.io/polyloupe/img/loupe-da.png">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #fffdfa;
+      --surface: #ffffff;
+      --tint: #fff4ea;
+      --text: #1c1917;
+      --muted: #57534e;
+      --line: #e7e0d8;
+      --accent: #c2410c;
+      --accent-hover: #9a3412;
+      --on-accent: #ffffff;
+      --code-bg: #1c1917;
+      --code-text: #fafaf9;
+      --radius: 18px;
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141210;
+        --surface: #1f1c19;
+        --tint: #241a13;
+        --text: #f5f5f4;
+        --muted: #c4bdb6;
+        --line: #36302b;
+        --accent: #fb923c;
+        --accent-hover: #fdba74;
+        --on-accent: #1c1917;
+        --code-bg: #0c0a09;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body {
+      margin: 0;
+      font: 18px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    a:hover { color: var(--accent-hover); }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    header.top { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 20px; color: var(--text); text-decoration: none; }
+    .brand img { width: 36px; height: 36px; }
+    .top nav a { color: var(--text); font-weight: 600; text-decoration: none; margin-left: 24px; }
+    .top nav a:hover { color: var(--accent); }
+
+    .hero { padding-top: 56px; padding-bottom: 24px; text-align: center; }
+    .eyebrow { display: inline-block; padding: 6px 14px; border-radius: 999px; background: var(--tint); color: var(--accent); font-weight: 650; font-size: 15px; letter-spacing: .02em; }
+    h1 { font-size: clamp(38px, 6vw, 64px); line-height: 1.08; letter-spacing: -0.025em; margin: 22px auto 18px; max-width: 14em; }
+    .lead { font-size: clamp(19px, 2.2vw, 22px); color: var(--muted); max-width: 36em; margin: 0 auto; }
+    .actions { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin: 34px 0 14px; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 28px; border-radius: 14px; font-weight: 650; font-size: 18px; text-decoration: none; border: 2px solid var(--accent); }
+    .btn.primary { background: var(--accent); color: var(--on-accent); }
+    .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
+    .btn.secondary { color: var(--accent); background: transparent; }
+    .btn.secondary:hover { background: var(--tint); }
+    .btn svg { width: 22px; height: 22px; fill: currentColor; }
+    .status { color: var(--muted); font-size: 15px; }
+
+    figure { margin: 0; }
+    .shot { margin: 40px auto 0; max-width: 1040px; }
+    .shot img { display: block; width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: 0 30px 60px -30px rgba(28, 25, 23, .35); }
+    figcaption { color: var(--muted); font-size: 15px; text-align: center; margin-top: 14px; }
+
+    section { padding: 88px 0 0; }
+    h2 { font-size: clamp(28px, 3.6vw, 40px); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
+    .section-lead { color: var(--muted); max-width: 40em; margin: 0 0 36px; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; list-style: none; padding: 0; margin: 0; }
+    .steps li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+    .steps li::before { counter-increment: step; content: counter(step); display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 700; margin-bottom: 16px; }
+    .steps h3, .features h3 { margin: 0 0 6px; font-size: 21px; }
+    .steps p, .features p { margin: 0; color: var(--muted); }
+    kbd { font: 600 15px ui-monospace, SFMono-Regular, Menlo, monospace; padding: 2px 7px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; background: var(--bg); color: var(--text); white-space: nowrap; }
+
+    .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .feature { display: flex; gap: 18px; padding: 28px; border-radius: var(--radius); background: var(--tint); }
+    .feature .icon { flex: none; width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--surface); color: var(--accent); }
+    .feature .icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .langs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding: 0; list-style: none; }
+    .langs li { padding: 3px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 15px; font-weight: 600; }
+
+    .gallery { display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; align-items: start; }
+    .gallery img { display: block; width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line); }
+
+    .start { display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; }
+    pre { margin: 0; padding: 24px 26px; border-radius: var(--radius); background: var(--code-bg); color: var(--code-text); font: 16px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-x: auto; }
+    pre .c { color: #a8a29e; }
+
+    footer { margin-top: 96px; padding: 32px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+
+    @media (max-width: 820px) {
+      .steps, .features, .gallery, .start { grid-template-columns: 1fr; }
+      .top nav a:not(:last-child) { display: none; }
+      section { padding-top: 64px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="#"><img src="icon.svg" alt="">Polyloupe</a>
+      <nav aria-label="Main">
+        <a href="#how">How it works</a>
+        <a href="#start">Get started</a>
+        <a href="https://github.com/wooboo/polyloupe">GitHub</a>
+      </nav>
+    </header>
+  </div>
+
+  <main>
+    <div class="wrap hero">
+      <span class="eyebrow">Free · Offline · Open source</span>
+      <h1>A magnifying glass that translates your screen.</h1>
+      <p class="lead">Hold it over any text and read it in your own language — right where it was, in the same colours. Made for older people: nothing to select, copy or remember.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/wooboo/polyloupe">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          View on GitHub
+        </a>
+        <a class="btn secondary" href="#how">See how it works</a>
+      </div>
+      <p class="status">Early prototype — works on macOS today, Windows and Linux are on the way.</p>
+
+      <figure class="shot">
+        <picture>
+          <source media="(max-width: 640px)" srcset="img/loupe-da-crop.png" width="760" height="330">
+          <img src="img/loupe-da.png" width="1400" height="800" alt="A web page with a blue banner in Danish. Under the magnifying glass the banner reads in Polish: “Pamiętaj, aby zapłacić rachunek za prąd do piątku.” The rest of the page stays in the original languages.">
+        </picture>
+        <figcaption>A Danish reminder about an electricity bill, read in Polish under the loupe.</figcaption>
+      </figure>
+    </div>
+
+    <section id="how">
+      <div class="wrap">
+        <h2>As simple as a real magnifying glass</h2>
+        <p class="section-lead">No menus to learn. Three steps that feel natural from the first try.</p>
+        <ol class="steps">
+          <li>
+            <h3>Take it out</h3>
+            <p>Press the big button, click the loupe icon in the menu bar, or press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>L</kbd> in any app.</p>
+          </li>
+          <li>
+            <h3>Hover over text</h3>
+            <p>The text under the glass is already translated, in place. Turn the scroll wheel to make it bigger.</p>
+          </li>
+          <li>
+            <h3>Put it away</h3>
+            <p>Click anywhere or press <kbd>Esc</kbd>. You are right back where you were.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>Why Polyloupe</h2>
+        <p class="section-lead">Built for people who just want to read what is on the screen.</p>
+        <div class="features">
+          <div class="feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+            <div>
+              <h3>Private by design</h3>
+              <p>Translation runs on your own computer with Mozilla's Firefox Translations models. Bank statements and letters never leave your device.</p>
+            </div>
+          </div>
+          <div class="feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>
+            <div>
+              <h3>Six languages, any pair</h3>
+              <p>Language is detected automatically.</p>
+              <ul class="langs" aria-label="Supported languages">
+                <li lang="pl">Polski</li><li lang="en">English</li><li lang="da">Dansk</li><li lang="sv">Svenska</li><li lang="fi">Suomi</li><li lang="nb">Norsk</li>
+              </ul>
+            </div>
+          </div>
+          <div class="feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M8 11h6M11 8v6"/></svg></span>
+            <div>
+              <h3>Made for older eyes</h3>
+              <p>Large controls, high contrast following WCAG 2.1 AA, and full keyboard control — arrows move the loupe, <kbd>+</kbd> and <kbd>−</kbd> zoom.</p>
+            </div>
+          </div>
+          <div class="feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></span>
+            <div>
+              <h3>Free and open source</h3>
+              <p>No accounts, no subscriptions. MIT or Apache-2.0, written in Rust with GPUI Kit.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>Whole paragraphs, not word salad</h2>
+        <p class="section-lead">Lines are joined into paragraphs before translating, so sentences keep their meaning — and the translation fits where the original was.</p>
+        <div class="gallery">
+          <figure>
+            <img src="img/loupe-en.png" width="1400" height="800" loading="lazy" alt="An English appointment confirmation. Under the loupe the heading and the whole paragraph appear in Polish, wrapped into the same three lines.">
+            <figcaption>An English letter, read in Polish.</figcaption>
+          </figure>
+          <figure>
+            <img src="img/home.png" width="560" height="752" loading="lazy" alt="The Polyloupe main window: a large “Pokaż lupę” (Show loupe) button, the keyboard shortcut, and a list of six languages to translate into.">
+            <figcaption>One big button and one choice: the language to read in.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="start">
+      <div class="wrap start">
+        <div>
+          <h2>Get started</h2>
+          <p class="section-lead">Ready-to-install downloads are coming. Until then, you can build Polyloupe from source with Rust. On first start it downloads the dictionaries (about 25&nbsp;MB per language) — after that it works without the internet.</p>
+          <a class="btn secondary" href="https://github.com/wooboo/polyloupe#building">Build instructions</a>
+        </div>
+        <pre><code><span class="c"># macOS (Windows and Linux: work in progress)</span>
+git clone https://github.com/wooboo/polyloupe
+cd polyloupe
+cargo run --release</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 Polyloupe contributors · MIT or Apache-2.0</span>
+      <span>Translation models by <a href="https://github.com/mozilla/translations">Mozilla</a> (MPL-2.0) · <a href="https://github.com/wooboo/polyloupe">Source on GitHub</a></span>
+    </div>
+  </footer>
+</body>
+</html>
