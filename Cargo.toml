@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+default-members = ["crates/app"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+polyloupe-translate = { path = "crates/translate" }
+polyloupe-ocr = { path = "crates/ocr" }
+anyhow = "1"
+log = "0.4"
+
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.dev.package.fxtranslate]
+opt-level = 3

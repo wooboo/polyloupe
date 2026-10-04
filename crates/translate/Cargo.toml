@@ -1,0 +1,16 @@
+[package]
+name = "polyloupe-translate"
+description = "Offline (and optional cloud) translation for polyloupe"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+log.workspace = true
+fxtranslate = { version = "0.5", features = ["net", "icu-segmenter"] }
+lingua = { version = "1.8", default-features = false, features = ["polish", "english", "danish", "swedish", "finnish", "bokmal"] }
+parking_lot = "0.12"
+
+[[example]]
+name = "translate"
