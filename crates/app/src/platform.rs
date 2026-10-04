@@ -48,14 +48,40 @@ mod imp {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(windows)]
 mod imp {
-    // TODO: GetCursorPos on Windows, XQueryPointer on X11. Wayland does not
-    // expose a global cursor position; see docs/platforms.md.
+    use windows_sys::Win32::Foundation::POINT;
+    use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
+
+    // TODO: GetCursorPos reports physical pixels on per-monitor-DPI-aware
+    // processes; map to GPUI's logical coordinates (see docs/platforms.md).
     pub fn cursor_position() -> Option<(f32, f32)> {
-        None
+        let mut point = POINT { x: 0, y: 0 };
+        (unsafe { GetCursorPos(&mut point) } != 0).then(|| (point.x as f32, point.y as f32))
     }
 
+    pub fn screen_capture_allowed() -> bool {
+        true
+    }
+
+    pub fn request_screen_capture() {}
+
+    pub fn open_screen_capture_settings() {}
+}
+
+#[cfg(target_os = "linux")]
+mod imp {
+    /// Works on X11 (and XWayland for X11 windows only). Wayland does not
+    /// expose a global cursor position; callers fall back to the screen centre.
+    pub fn cursor_position() -> Option<(f32, f32)> {
+        let (conn, screen) = xcb::Connection::connect(None).ok()?;
+        let root = conn.get_setup().roots().nth(screen as usize)?.root();
+        let cookie = conn.send_request(&xcb::x::QueryPointer { window: root });
+        let reply = conn.wait_for_reply(cookie).ok()?;
+        Some((reply.root_x() as f32, reply.root_y() as f32))
+    }
+
+    /// On Wayland the screenshot portal asks the user itself.
     pub fn screen_capture_allowed() -> bool {
         true
     }
