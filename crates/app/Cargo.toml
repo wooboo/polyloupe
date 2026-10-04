@@ -4,6 +4,10 @@ description = "A magnifying glass that translates text on the screen in place"
 edition.workspace = true
 version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+publish = false
 
 [dependencies]
 anyhow.workspace = true

@@ -7,6 +7,9 @@ default-members = ["crates/app"]
 edition = "2024"
 version = "0.1.0"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/wooboo/polyloupe"
+homepage = "https://github.com/wooboo/polyloupe"
+authors = ["Piotr Żabówka"]
 
 [workspace.dependencies]
 polyloupe-translate = { path = "crates/translate" }
