@@ -2,7 +2,8 @@
 
 As of October 2026. macOS is implemented and verified. Windows and Linux were
 analysed by reading the code of the dependencies (GPUI `gpui-pre 0.3.7`,
-`xcap 0.9`, `tray-icon 0.26`, `global-hotkey 0.8`) but have **not been run
+`xcap 0.9`, `tray-icon 0.26`, `global-hotkey 0.8`). They build and pass the tests in CI
+(GitHub Actions: `windows-latest`, `ubuntu-latest`) but have **not been run
 yet** — the “Manual checks” section at the end is the test list.
 
 ## Key decision: a loupe over a frozen screen
