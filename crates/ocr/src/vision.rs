@@ -8,7 +8,9 @@ use objc2_core_graphics::{
     CGBitmapInfo, CGColorRenderingIntent, CGColorSpace, CGDataProvider, CGImage, CGImageAlphaInfo,
 };
 use objc2_foundation::{NSArray, NSDictionary, NSString};
-use objc2_vision::{VNImageRequestHandler, VNRecognizeTextRequest, VNRequest, VNRequestTextRecognitionLevel};
+use objc2_vision::{
+    VNImageRequestHandler, VNRecognizeTextRequest, VNRequest, VNRequestTextRecognitionLevel,
+};
 
 use crate::{Rect, TextLine};
 
@@ -23,18 +25,27 @@ pub fn recognize(image: &image::RgbaImage) -> anyhow::Result<Vec<TextLine>> {
     request.setRecognitionLevel(VNRequestTextRecognitionLevel::Accurate);
     request.setUsesLanguageCorrection(true);
     request.setAutomaticallyDetectsLanguage(true);
-    let languages: Vec<Retained<NSString>> = LANGUAGES.iter().map(|l| NSString::from_str(l)).collect();
+    let languages: Vec<Retained<NSString>> =
+        LANGUAGES.iter().map(|l| NSString::from_str(l)).collect();
     request.setRecognitionLanguages(&NSArray::from_retained_slice(&languages));
 
     let handler = unsafe {
-        VNImageRequestHandler::initWithCGImage_options(VNImageRequestHandler::alloc(), &cg_image, &NSDictionary::new())
+        VNImageRequestHandler::initWithCGImage_options(
+            VNImageRequestHandler::alloc(),
+            &cg_image,
+            &NSDictionary::new(),
+        )
     };
-    let requests: Retained<NSArray<VNRequest>> = NSArray::from_retained_slice(&[Retained::into_super(
-        Retained::into_super(request.clone()),
-    )]);
-    handler
-        .performRequests_error(&requests)
-        .map_err(|e| anyhow!("Vision text recognition failed: {}", e.localizedDescription()))?;
+    let requests: Retained<NSArray<VNRequest>> =
+        NSArray::from_retained_slice(&[Retained::into_super(Retained::into_super(
+            request.clone(),
+        ))]);
+    handler.performRequests_error(&requests).map_err(|e| {
+        anyhow!(
+            "Vision text recognition failed: {}",
+            e.localizedDescription()
+        )
+    })?;
 
     let (w, h) = (width as f32, height as f32);
     let mut lines = Vec::new();

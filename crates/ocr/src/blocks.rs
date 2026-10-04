@@ -33,14 +33,22 @@ impl TextBlock {
 }
 
 /// Group lines into blocks: a line joins the block above it when it sits right
-/// below the block's last line, has a similar height and overlaps horizontally
-/// with a shared left edge or centre.
+/// below the block's last line, is set in a similar font size and overlaps
+/// horizontally with a shared left edge or centre.
 pub fn group_into_blocks(mut lines: Vec<TextLine>) -> Vec<TextBlock> {
-    lines.sort_by(|a, b| a.bounds.y.total_cmp(&b.bounds.y).then(a.bounds.x.total_cmp(&b.bounds.x)));
+    lines.sort_by(|a, b| {
+        a.bounds
+            .y
+            .total_cmp(&b.bounds.y)
+            .then(a.bounds.x.total_cmp(&b.bounds.x))
+    });
 
     let mut blocks: Vec<TextBlock> = Vec::new();
     for line in lines {
-        let target = blocks.iter_mut().rev().find(|block| continues(block, &line));
+        let target = blocks
+            .iter_mut()
+            .rev()
+            .find(|block| continues(block, &line));
         match target {
             Some(block) => {
                 block.bounds = block.bounds.union(&line.bounds);
@@ -55,19 +63,27 @@ pub fn group_into_blocks(mut lines: Vec<TextLine>) -> Vec<TextBlock> {
     blocks
 }
 
+/// Average advance per character. OCR box heights vary a lot for the same
+/// font, but the width per character is a stable estimate of font size.
+fn char_width(line: &TextLine) -> f32 {
+    line.bounds.width / line.text.chars().count().max(1) as f32
+}
+
 fn continues(block: &TextBlock, line: &TextLine) -> bool {
-    let last = &block.lines.last().expect("blocks are never empty").bounds;
-    let next = &line.bounds;
-    let height = last.height.max(next.height);
+    let last_line = block.lines.last().expect("blocks are never empty");
+    let (last, next) = (&last_line.bounds, &line.bounds);
+    let (a, b) = (char_width(last_line), char_width(line));
+    // Roughly one em, as text averages about half an em per character.
+    let em = a.max(b) * 2.0;
 
-    let similar_height = (last.height - next.height).abs() <= 0.35 * height;
+    let same_font = a.min(b) / a.max(b) >= 0.7;
     let gap = next.y - last.bottom();
-    let close_below = gap >= -0.3 * height && gap <= 0.9 * height;
+    let close_below = gap >= -0.5 * em && gap <= 1.0 * em;
     let overlaps = next.x < last.right() && last.x < next.right();
-    let aligned_left = (next.x - last.x).abs() <= 1.5 * height;
-    let aligned_centre = ((next.x + next.right()) - (last.x + last.right())).abs() / 2.0 <= height;
+    let aligned_left = (next.x - last.x).abs() <= 1.5 * em;
+    let aligned_centre = ((next.x + next.right()) - (last.x + last.right())).abs() / 2.0 <= em;
 
-    similar_height && close_below && overlaps && (aligned_left || aligned_centre)
+    same_font && close_below && overlaps && (aligned_left || aligned_centre)
 }
 
 #[cfg(test)]
@@ -77,7 +93,12 @@ mod tests {
     fn line(text: &str, x: f32, y: f32, width: f32, height: f32) -> TextLine {
         TextLine {
             text: text.into(),
-            bounds: Rect { x, y, width, height },
+            bounds: Rect {
+                x,
+                y,
+                width,
+                height,
+            },
             confidence: 1.0,
         }
     }
@@ -85,23 +106,28 @@ mod tests {
     #[test]
     fn joins_paragraph_lines_and_separates_columns_and_headings() {
         let blocks = group_into_blocks(vec![
-            line("Heading", 10.0, 10.0, 200.0, 40.0),
-            line("First line of a para-", 10.0, 70.0, 300.0, 20.0),
-            line("graph continues here", 10.0, 94.0, 280.0, 20.0),
-            line("Other column", 500.0, 70.0, 200.0, 20.0),
+            // Box heights are noisy; character widths tell headings apart.
+            line("Big heading", 10.0, 10.0, 330.0, 40.0),
+            line("First line of a para-", 10.0, 60.0, 210.0, 28.0),
+            line("graph continues here", 10.0, 92.0, 200.0, 18.0),
+            line("Other column", 500.0, 60.0, 120.0, 20.0),
         ]);
         let texts: Vec<_> = blocks.iter().map(TextBlock::text).collect();
         assert_eq!(
             texts,
-            ["Heading", "First line of a paragraph continues here", "Other column"]
+            [
+                "Big heading",
+                "First line of a paragraph continues here",
+                "Other column"
+            ]
         );
     }
 
     #[test]
     fn splits_on_large_vertical_gap() {
         let blocks = group_into_blocks(vec![
-            line("One", 10.0, 10.0, 100.0, 20.0),
-            line("Two", 10.0, 80.0, 100.0, 20.0),
+            line("One", 10.0, 10.0, 30.0, 20.0),
+            line("Two", 10.0, 80.0, 30.0, 20.0),
         ]);
         assert_eq!(blocks.len(), 2);
     }

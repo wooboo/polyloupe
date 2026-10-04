@@ -57,7 +57,11 @@ impl OfflineTranslator {
 
     /// Download every model needed to translate from any supported language
     /// into `trg`, so later translations work without a network. Blocking.
-    pub fn prefetch(&self, trg: Lang, mut on_progress: impl FnMut(usize, usize)) -> anyhow::Result<()> {
+    pub fn prefetch(
+        &self,
+        trg: Lang,
+        mut on_progress: impl FnMut(usize, usize),
+    ) -> anyhow::Result<()> {
         let models = Models::new(&self.models_dir);
         let pairs = model_pairs_into(trg);
         for (i, (src, trg)) in pairs.iter().enumerate() {
@@ -92,7 +96,8 @@ impl Translator for OfflineTranslator {
                 reply,
             })
             .map_err(|_| anyhow!("translation worker stopped"))?;
-        rx.recv().map_err(|_| anyhow!("translation worker stopped"))?
+        rx.recv()
+            .map_err(|_| anyhow!("translation worker stopped"))?
     }
 }
 

@@ -39,7 +39,10 @@ impl Rect {
     }
 
     pub fn intersects(&self, other: &Rect) -> bool {
-        self.x < other.right() && other.x < self.right() && self.y < other.bottom() && other.y < self.bottom()
+        self.x < other.right()
+            && other.x < self.right()
+            && self.y < other.bottom()
+            && other.y < self.bottom()
     }
 }
 
