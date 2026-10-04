@@ -11,6 +11,7 @@ pub struct Region {
     /// Bounds in screenshot (physical) pixels.
     pub bounds: Rect,
     pub line_height: f32,
+    pub line_count: usize,
     pub original: String,
     pub language: Lang,
     pub background: [u8; 3],
@@ -60,6 +61,7 @@ fn region_for(
     Some(Region {
         bounds,
         line_height,
+        line_count: block.lines.len(),
         original,
         language,
         background,

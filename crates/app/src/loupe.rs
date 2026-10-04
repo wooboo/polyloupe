@@ -413,18 +413,14 @@ impl Render for LoupeView {
 fn render_translation(region: &Region, to_lens: f32) -> impl IntoElement {
     let translation = region.translation.clone().unwrap_or_default();
     let b = &region.bounds;
-    // Translations are often longer than the original; shrink the text so it
-    // roughly fits the same area (area grows with the square of font size).
-    let (original_len, translated_len) =
-        (region.original.chars().count(), translation.chars().count());
-    let fit = if translated_len > original_len {
-        (original_len as f32 / translated_len as f32)
-            .sqrt()
-            .max(0.6)
-    } else {
-        1.0
-    };
-    let font = region.line_height * to_lens * 0.78 * fit;
+    // Pick the font size at which the translation fills as many lines as the
+    // original did (an average character is about half an em wide), but never
+    // larger than the original text and not so small that it becomes hard to read.
+    let natural = region.line_height * 0.78;
+    let width = b.width - region.line_height * 0.3;
+    let chars = translation.chars().count().max(1) as f32;
+    let fitted = width * region.line_count as f32 / (chars * 0.52);
+    let font = fitted.min(natural).max(natural * 0.55) * to_lens;
     let [r, g, bl] = region.background;
     let [fr, fg, fb] = region.foreground;
     div()
