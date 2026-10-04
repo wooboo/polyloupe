@@ -19,7 +19,7 @@ dirs = "6"
 env_logger = "0.11"
 global-hotkey = "0.8"
 gpui-kit = "0.7"
-image = { version = "0.25", default-features = false }
+image = { version = "0.25", default-features = false, features = ["png"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # The ksni backend talks D-Bus directly, so Linux needs no GTK event loop.
